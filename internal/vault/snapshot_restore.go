@@ -27,6 +27,10 @@ func RestoreSnapshot(vaultPath, label, passphrase string) (*Vault, error) {
 		return nil, fmt.Errorf("parsing snapshot: %w", err)
 	}
 
+	if len(snap.Entries) == 0 {
+		return nil, fmt.Errorf("snapshot %q contains no entries", label)
+	}
+
 	// Build a fresh vault from the snapshot entries.
 	v := &Vault{
 		Entries:  snap.Entries,
