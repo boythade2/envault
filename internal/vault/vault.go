@@ -81,3 +81,13 @@ func (v *Vault) RemoveEntry(name string) bool {
 	delete(v.Entries, name)
 	return true
 }
+
+// GetEntry returns the VaultEntry for the given name, or an error if it does
+// not exist.
+func (v *Vault) GetEntry(name string) (*VaultEntry, error) {
+	entry, ok := v.Entries[name]
+	if !ok {
+		return nil, fmt.Errorf("entry %q not found in vault", name)
+	}
+	return entry, nil
+}
