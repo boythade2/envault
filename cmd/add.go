@@ -29,12 +29,17 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	key := args[1]
 	value := args[2]
 
+	if key == "" {
+		return fmt.Errorf("key must not be empty")
+	}
+
 	v, err := vault.LoadOrCreate(vaultFile, addPassphrase)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading vault: %v\n", err)
 		return err
 	}
 
+	_, exists := v.Get(key)
 	v.Set(key, value)
 
 	if err := v.Save(vaultFile, addPassphrase); err != nil {
@@ -42,6 +47,10 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Key %q added/updated in %s\n", key, vaultFile)
+	if exists {
+		fmt.Printf("Key %q updated in %s\n", key, vaultFile)
+	} else {
+		fmt.Printf("Key %q added to %s\n", key, vaultFile)
+	}
 	return nil
 }
