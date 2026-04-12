@@ -14,6 +14,7 @@ envault compare <vaultA> <vaultB> --pass-a <passphrase> [--pass-b <passphrase>]
 |------|-------------|
 | `--pass-a` | Passphrase for vault A (required) |
 | `--pass-b` | Passphrase for vault B (defaults to `--pass-a` if omitted) |
+| `--keys-only` | Show only key names without counts or categories |
 
 ## Output
 
@@ -25,6 +26,16 @@ The command prints a summary of differences between the two vaults:
 - **Identical** — keys present in both vaults with the same value
 
 If the vaults are identical, the message `Vaults are identical.` is printed.
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Vaults are identical |
+| `1`  | Vaults differ |
+| `2`  | Error (e.g. bad passphrase, missing file) |
+
+This makes `envault compare` suitable for use in scripts and CI pipelines.
 
 ## Examples
 
