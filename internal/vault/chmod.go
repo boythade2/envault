@@ -5,48 +5,39 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 )
 
-// KeyPermission defines who can read or write a specific key.
-type KeyPermission struct {
-	Key       string    `json:"key"`
-	ReadOnly  bool      `json:"read_only"`
-	Owner     string    `json:"owner,omitempty"`
-	UpdatedAt time.Time `json:"updated_at"`
+type Permission struct {
+	Key      string `json:"key"`
+	ReadOnly bool   `json:"read_only"`
 }
 
-// PermissionMap holds permissions indexed by key name.
-type PermissionMap struct {
-	Permissions map[string]KeyPermission `json:"permissions"`
-}
+type PermissionMap map[string]Permission
 
 func permPath(vaultPath string) string {
 	dir := filepath.Dir(vaultPath)
-	return filepath.Join(dir, ".envault_permissions.json")
+	base := filepath.Base(vaultPath)
+	ext := filepath.Ext(base)
+	name := base[:len(base)-len(ext)]
+	return filepath.Join(dir, name+".perms.json")
 }
 
-// LoadPermissions reads the permission map for a vault, returning an empty map if none exists.
 func LoadPermissions(vaultPath string) (PermissionMap, error) {
 	p := permPath(vaultPath)
 	data, err := os.ReadFile(p)
 	if os.IsNotExist(err) {
-		return PermissionMap{Permissions: make(map[string]KeyPermission)}, nil
+		return make(PermissionMap), nil
 	}
 	if err != nil {
-		return PermissionMap{}, fmt.Errorf("read permissions: %w", err)
+		return nil, fmt.Errorf("read permissions: %w", err)
 	}
 	var pm PermissionMap
 	if err := json.Unmarshal(data, &pm); err != nil {
-		return PermissionMap{}, fmt.Errorf("parse permissions: %w", err)
-	}
-	if pm.Permissions == nil {
-		pm.Permissions = make(map[string]KeyPermission)
+		return nil, fmt.Errorf("parse permissions: %w", err)
 	}
 	return pm, nil
 }
 
-// SavePermissions writes the permission map to disk.
 func SavePermissions(vaultPath string, pm PermissionMap) error {
 	data, err := json.MarshalIndent(pm, "", "  ")
 	if err != nil {
@@ -55,40 +46,43 @@ func SavePermissions(vaultPath string, pm PermissionMap) error {
 	return os.WriteFile(permPath(vaultPath), data, 0600)
 }
 
-// SetPermission sets or updates the permission for a single key.
-func SetPermission(vaultPath, key, owner string, readOnly bool) error {
+func SetPermission(vaultPath, key string, readOnly bool) error {
 	pm, err := LoadPermissions(vaultPath)
 	if err != nil {
 		return err
 	}
-	pm.Permissions[key] = KeyPermission{
-		Key:       key,
-		ReadOnly:  readOnly,
-		Owner:     owner,
-		UpdatedAt: time.Now().UTC(),
-	}
+	pm[key] = Permission{Key: key, ReadOnly: readOnly}
 	return SavePermissions(vaultPath, pm)
 }
 
-// RemovePermission deletes the permission entry for a key.
 func RemovePermission(vaultPath, key string) error {
 	pm, err := LoadPermissions(vaultPath)
 	if err != nil {
 		return err
 	}
-	delete(pm.Permissions, key)
+	delete(pm, key)
 	return SavePermissions(vaultPath, pm)
 }
 
-// IsReadOnly returns true if the key is marked read-only.
 func IsReadOnly(vaultPath, key string) (bool, error) {
 	pm, err := LoadPermissions(vaultPath)
 	if err != nil {
 		return false, err
 	}
-	p, ok := pm.Permissions[key]
+	p, ok := pm[key]
 	if !ok {
 		return false, nil
 	}
 	return p.ReadOnly, nil
+}
+
+func AssertWritable(vaultPath, key string) error {
+	ro, err := IsReadOnly(vaultPath, key)
+	if err != nil {
+		return err
+	}
+	if ro {
+		return fmt.Errorf("key %q is read-only", key)
+	}
+	return nil
 }
