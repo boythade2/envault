@@ -47,6 +47,13 @@ func TestImportDotenvSkipsComments(t *testing.T) {
 	}
 }
 
+func TestImportDotenvMissingFile(t *testing.T) {
+	_, err := ImportDotenv("/nonexistent/path/.env")
+	if err == nil {
+		t.Error("expected error for missing file, got nil")
+	}
+}
+
 func TestImportJSON(t *testing.T) {
 	content := `{"APP_ENV":"production","PORT":"8080"}`
 	tmp := filepath.Join(t.TempDir(), "vars.json")
@@ -72,5 +79,12 @@ func TestImportJSONInvalidFile(t *testing.T) {
 	_, err := ImportJSON(tmp)
 	if err == nil {
 		t.Error("expected error for invalid JSON")
+	}
+}
+
+func TestImportJSONMissingFile(t *testing.T) {
+	_, err := ImportJSON("/nonexistent/path/vars.json")
+	if err == nil {
+		t.Error("expected error for missing file, got nil")
 	}
 }
