@@ -99,6 +99,21 @@ func TestValidateSchemaPatternMismatch(t *testing.T) {
 	}
 }
 
+func TestValidateSchemaMultipleViolations(t *testing.T) {
+	_, v := buildSchemaVault(t)
+	s := Schema{
+		Rules: []SchemaRule{
+			{Key: "DB_URL", Required: true},
+			{Key: "SECRET_KEY", Required: true},
+			{Key: "APP_PORT", Pattern: `^[a-z]+$`}, // present but wrong pattern
+		},
+	}
+	violations := ValidateSchema(v, s)
+	if len(violations) != 3 {
+		t.Fatalf("expected 3 violations, got %d: %v", len(violations), violations)
+	}
+}
+
 func TestSchemaFilePermissions(t *testing.T) {
 	dir := t.TempDir()
 	vaultPath := filepath.Join(dir, "test.vault")
