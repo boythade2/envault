@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	filterKeyPrefix    string
-	filterKeySuffix    string
+	filterKeyPrefix     string
+	filterKeySuffix     string
 	filterValueContains string
-	filterTags         string
-	filterInvert       bool
+	filterTags          string
+	filterInvert        bool
 )
 
 var filterCmd = &cobra.Command{
@@ -42,25 +42,29 @@ func runFilter(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load vault: %w", err)
 	}
 
-	var tagList []string
-	if filterTags != "" {
-		for _, t := range strings.Split(filterTags, ",") {
-			trimmed := strings.TrimSpace(t)
-			if trimmed != "" {
-				tagList = append(tagList, trimmed)
-			}
-		}
-	}
-
 	opts := vault.FilterOptions{
 		KeyPrefix:     filterKeyPrefix,
 		KeySuffix:     filterKeySuffix,
 		ValueContains: filterValueContains,
-		TagFilter:     tagList,
+		TagFilter:     parseTagList(filterTags),
 		InvertMatch:   filterInvert,
 	}
 
 	results := vault.FilterEntries(v, opts)
 	_, err = fmt.Fprint(os.Stdout, vault.FormatFilterResults(results))
 	return err
+}
+
+// parseTagList splits a comma-separated tag string into a trimmed, non-empty slice of tags.
+func parseTagList(tags string) []string {
+	if tags == "" {
+		return nil
+	}
+	var tagList []string
+	for _, t := range strings.Split(tags, ",") {
+		if trimmed := strings.TrimSpace(t); trimmed != "" {
+			tagList = append(tagList, trimmed)
+		}
+	}
+	return tagList
 }
