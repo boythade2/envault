@@ -39,3 +39,14 @@ func TestExecuteReturnsNoError(t *testing.T) {
 		t.Errorf("Execute() returned unexpected error: %v", err)
 	}
 }
+
+func TestRootCommandUnknownFlag(t *testing.T) {
+	buf := new(bytes.Buffer)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs([]string{"--unknown-flag"})
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Error("expected an error for unknown flag, got nil")
+	}
+}
