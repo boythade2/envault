@@ -59,6 +59,17 @@ func (h *History) Record(vaultPath, action, key, oldValue, newValue string) erro
 	return h.save(vaultPath)
 }
 
+// EntriesForKey returns all history entries for the given key in chronological order.
+func (h *History) EntriesForKey(key string) []HistoryEntry {
+	var result []HistoryEntry
+	for _, e := range h.Entries {
+		if e.Key == key {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
 // save writes the history to disk.
 func (h *History) save(vaultPath string) error {
 	data, err := json.MarshalIndent(h, "", "  ")
