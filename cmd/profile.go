@@ -43,9 +43,22 @@ func init() {
 	rootCmd.AddCommand(profileCmd)
 }
 
-func runProfileAdd(cmd *cobra.Command, args []string) error {
-	dir, _ := os.Getwd()
+// loadProfileStore is a helper that retrieves the current working directory
+// and loads the profile store from it, consolidating repeated boilerplate.
+func loadProfileStore() (*vault.ProfileStore, string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to determine working directory: %w", err)
+	}
 	store, err := vault.LoadProfiles(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	return store, dir, nil
+}
+
+func runProfileAdd(cmd *cobra.Command, args []string) error {
+	store, dir, err := loadProfileStore()
 	if err != nil {
 		return err
 	}
@@ -60,8 +73,7 @@ func runProfileAdd(cmd *cobra.Command, args []string) error {
 }
 
 func runProfileRemove(cmd *cobra.Command, args []string) error {
-	dir, _ := os.Getwd()
-	store, err := vault.LoadProfiles(dir)
+	store, dir, err := loadProfileStore()
 	if err != nil {
 		return err
 	}
@@ -76,8 +88,7 @@ func runProfileRemove(cmd *cobra.Command, args []string) error {
 }
 
 func runProfileList(cmd *cobra.Command, args []string) error {
-	dir, _ := os.Getwd()
-	store, err := vault.LoadProfiles(dir)
+	store, _, err := loadProfileStore()
 	if err != nil {
 		return err
 	}
