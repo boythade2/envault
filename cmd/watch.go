@@ -40,8 +40,8 @@ Subcommands:
 
 func runWatchRecord(cmd *cobra.Command, args []string) error {
 	vaultPath := args[0]
-	if _, err := os.Stat(vaultPath); err != nil {
-		return fmt.Errorf("vault file not found: %s", vaultPath)
+	if err := requireVaultFile(vaultPath); err != nil {
+		return err
 	}
 	if err := vault.SaveWatchState(vaultPath); err != nil {
 		return fmt.Errorf("record watch state: %w", err)
@@ -52,8 +52,8 @@ func runWatchRecord(cmd *cobra.Command, args []string) error {
 
 func runWatchStatus(cmd *cobra.Command, args []string) error {
 	vaultPath := args[0]
-	if _, err := os.Stat(vaultPath); err != nil {
-		return fmt.Errorf("vault file not found: %s", vaultPath)
+	if err := requireVaultFile(vaultPath); err != nil {
+		return err
 	}
 	changed, err := vault.HasChanged(vaultPath)
 	if err != nil {
@@ -63,6 +63,18 @@ func runWatchStatus(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(cmd.OutOrStdout(), "CHANGED: %s has been modified since the last record\n", vaultPath)
 	} else {
 		fmt.Fprintf(cmd.OutOrStdout(), "UNCHANGED: %s matches the recorded state\n", vaultPath)
+	}
+	return nil
+}
+
+// requireVaultFile returns an error if the given path does not exist or is not
+// accessible, providing a consistent error message across watch subcommands.
+func requireVaultFile(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("vault file not found: %s", path)
+		}
+		return fmt.Errorf("vault file not accessible: %w", err)
 	}
 	return nil
 }
