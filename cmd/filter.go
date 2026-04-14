@@ -50,9 +50,21 @@ func runFilter(cmd *cobra.Command, args []string) error {
 		InvertMatch:   filterInvert,
 	}
 
+	if !hasFilterCriteria(opts) {
+		return fmt.Errorf("at least one filter criterion must be specified (--key-prefix, --key-suffix, --value-contains, or --tags)")
+	}
+
 	results := vault.FilterEntries(v, opts)
 	_, err = fmt.Fprint(os.Stdout, vault.FormatFilterResults(results))
 	return err
+}
+
+// hasFilterCriteria reports whether at least one filter criterion has been set.
+func hasFilterCriteria(opts vault.FilterOptions) bool {
+	return opts.KeyPrefix != "" ||
+		opts.KeySuffix != "" ||
+		opts.ValueContains != "" ||
+		len(opts.TagFilter) > 0
 }
 
 // parseTagList splits a comma-separated tag string into a trimmed, non-empty slice of tags.
