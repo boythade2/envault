@@ -11,6 +11,7 @@ import (
 	"envault/internal/vault"
 )
 
+// writeInjectVault creates a temporary vault file with test entries for inject tests.
 func writeInjectVault(t *testing.T, dir string) string {
 	t.Helper()
 	v := &vault.Vault{Entries: map[string]vault.Entry{}}
@@ -92,5 +93,15 @@ func TestInjectWithPrefix(t *testing.T) {
 	out := buf.String()
 	if !strings.Contains(out, "Injected: 1") {
 		t.Errorf("expected 1 injected, got: %s", out)
+	}
+}
+
+// TestInjectNonExistentVaultFile verifies that inject returns an error when
+// the specified vault file does not exist.
+func TestInjectNonExistentVaultFile(t *testing.T) {
+	rootCmd.SetArgs([]string{"inject", "/nonexistent/path/to.vault"})
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Error("expected error for non-existent vault file")
 	}
 }
