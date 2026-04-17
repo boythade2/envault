@@ -81,6 +81,22 @@ func TestTruncateSelectedKeysOnly(t *testing.T) {
 	}
 }
 
+// TestTruncateExactLengthSkipped verifies that a value whose length exactly
+// equals MaxLen is treated as not needing truncation and is skipped.
+func TestTruncateExactLengthSkipped(t *testing.T) {
+	v := buildTruncateVault(t)
+	// EXACT has value "12345" (length 5)
+	results, err := TruncateEntries(v, TruncateOptions{MaxLen: 5})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, r := range results {
+		if r.Key == "EXACT" && !r.Skipped {
+			t.Errorf("expected EXACT (len==MaxLen) to be skipped")
+		}
+	}
+}
+
 func TestFormatTruncateResultsNoneChanged(t *testing.T) {
 	v := buildTruncateVault(t)
 	results, _ := TruncateEntries(v, TruncateOptions{MaxLen: 100})
